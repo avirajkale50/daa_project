@@ -7,7 +7,7 @@ Visualization of N-Queens problem using React made as a part of Data Structure a
 - This algorithm is designed using dfs, recursion and backtracking.
 
 
-## Live demo: 
+## Live demo: https://n-queen-visualizer-abhi6722.vercel.app
 
 
 ## Installation
