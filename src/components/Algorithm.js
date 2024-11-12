@@ -3,26 +3,41 @@ export default function solvePuzzle(board) {
   const results = [];
   const animations = [];
   let isAnimationNeeded = true;
+  let exploredPath = [];
 
-  function saveAnimation(i, j) {
-    // board.slice() doesn't work on nested array becz slice method does not make deep copy.
-    // It only copies the first layer of the array
-    const temp = JSON.parse(JSON.stringify(board)); // create copy of board
-    temp[i][j].isActive = true;
-    animations.push(temp); // save animation
+  function saveAnimation(row, col, isPlacing = false, isSolution = false) {
+    const temp = JSON.parse(JSON.stringify(board));
+    temp[row][col].isActive = true;
+    
+    // Add position to explored path
+    if (!exploredPath.some(pos => pos.row === row && pos.col === col)) {
+      exploredPath.push({
+        row,
+        col,
+        isSolution
+      });
+    }
+
+    animations.push({
+      board: temp,
+      state: {
+        row: row,
+        col: col,
+        action: isPlacing ? 'place' : 'check'
+      },
+      exploredPath: [...exploredPath]
+    });
   }
 
   function isSafe(row, col) {
     let i, j;
 
-    // Check this row on left side
-    for (i = 0; i < col; i++) if (board[row][i].hasQueen) return false;
+    for (i = 0; i < col; i++) 
+      if (board[row][i].hasQueen) return false;
 
-    // Check upper diagonal on left side
     for (i = row - 1, j = col - 1; i >= 0 && j >= 0; i--, j--)
       if (board[i][j].hasQueen) return false;
 
-    // Check lower diagonal on left side
     for (i = row + 1, j = col - 1; j >= 0 && i < N; i++, j--)
       if (board[i][j].hasQueen) return false;
 
@@ -30,41 +45,52 @@ export default function solvePuzzle(board) {
   }
 
   function placeQueen(col) {
-    // Base case: All queens are placed
     if (col >= N) {
       const solutionBoard = JSON.parse(JSON.stringify(board));
-      results.push(solutionBoard); // push this solution and search for another solution
+      results.push(solutionBoard);
       if (isAnimationNeeded) {
-        animations.push(solutionBoard.slice()); // push final result;
-        isAnimationNeeded = false; // save animation only for one solution
+        // Mark the current path as solution path
+        exploredPath = exploredPath.map(pos => ({...pos, isSolution: true}));
+        animations.push({
+          board: JSON.parse(JSON.stringify(board)),
+          state: { row: N - 1, col: N - 1, action: 'solution' },
+          exploredPath: [...exploredPath]
+        });
+        isAnimationNeeded = false;
       }
       return true;
     }
 
     let res = false;
-    // Consider this col and try to place this queen in all row one by one
     for (let i = 0; i < N; i++) {
-      let row = i;
-      if (isAnimationNeeded) saveAnimation(row, col);
-      // Check if queen can be placed on board[i][col];
-      if (isSafe(row, col)) {
-        board[row][col].hasQueen = true; // Place queen;
+      if (isAnimationNeeded) {
+        saveAnimation(i, col, false);
+      }
 
-        if (isAnimationNeeded) saveAnimation(row, col);
+      if (isSafe(i, col)) {
+        board[i][col].hasQueen = true;
+        
+        if (isAnimationNeeded) {
+          saveAnimation(i, col, true);
+        }
 
-        // Recursion to place rest of queens
         res = placeQueen(col + 1);
 
-        // if placing queen in board[i][col] does't lead to solution, then remove queen from board[i][col]
-        board[row][col].hasQueen = false;
+        board[i][col].hasQueen = false;
+        
+        if (isAnimationNeeded && !res) {
+          // Remove this position from explored path when backtracking
+          exploredPath = exploredPath.filter(
+            pos => !(pos.row === i && pos.col === col)
+          );
+          saveAnimation(i, col, false);
+        }
       }
     }
 
-    // If queen can't be placed
     return res;
   }
-  if (placeQueen(0)) { // But, here we are printing all solutions so final return will be false
-    console.log("Soln found!!");
-  }
+
+  placeQueen(0);
   return { results, animations };
 }
