@@ -1,7 +1,7 @@
 import "./Board.css";
 
 const Board = ({ board }) => {
-  let squareBG = ["lavenderblush", "seagreen"];
+  let squareBG = ["lavenderblush", "purple"];
 
   const totalWidth = (window.innerWidth > 425) ? 400 : (window.innerWidth-50);
   const squareSizeStyle = {

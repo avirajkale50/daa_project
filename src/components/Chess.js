@@ -1,86 +1,93 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./Chess.css";
-import Square from "./Square";
 import Board from "./Board";
+import StateSpaceTree from "./StateSpaceTree";
 import solvePuzzle from "./Algorithm";
 
 const Chess = () => {
   const [board, setBoard] = useState([]);
   const [boardSize, setBoardSize] = useState(8);
-  const [animation_speed, setAnimationSpeed] = useState(50);
-  const [solutions, setSolutions] = useState(null); // {results, animations}
-
-  // Toggle theme
+  const [animationSpeed, setAnimationSpeed] = useState(50);
+  const [solutions, setSolutions] = useState(null);
   const [theme, setTheme] = useState("dark");
+  const [currentState, setCurrentState] = useState({ row: 0, col: 0 });
+  const [exploredPath, setExploredPath] = useState([]);
+
   function switchTheme() {
     const newTheme = theme === "light" ? "dark" : "light";
     setTheme(newTheme);
   }
 
   function resetBoard() {
-    const squares = new Array(boardSize);
-    for (let i = 0; i < boardSize; i++) {
-      let row = new Array(boardSize);
-      for (let j = 0; j < boardSize; j++) row[j] = new Square(i, j);
-      squares[i] = row;
-    }
+    const squares = Array(boardSize).fill().map((_, i) => 
+      Array(boardSize).fill().map((_, j) => ({
+        row: i,
+        col: j,
+        background: (i + j) % 2,
+        hasQueen: false,
+        isActive: false,
+        id: `${i}, ${j}`
+      }))
+    );
     setBoard(squares);
-    setSolutions(null); // erase previous solution each time resetBoard is called
+    setSolutions(null);
+    setCurrentState({ row: 0, col: 0 });
   }
 
-  useEffect(resetBoard, [boardSize]);
+  useEffect(() => {
+    resetBoard();
+  }, [boardSize]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function getRandomIndex(max) {
     return Math.floor(Math.random() * (max + 1));
   }
 
   function toggleDisabled(disabledValue) {
-    let btnsAndInputs = document.querySelectorAll(".toggle-disabled"); // get all btns and input fields in input bar
-    for (let i = 0; i < btnsAndInputs.length; i++)
-      btnsAndInputs[i].disabled = disabledValue;
+    const btnsAndInputs = document.querySelectorAll(".toggle-disabled");
+    btnsAndInputs.forEach(element => {
+      element.disabled = disabledValue;
+    });
   }
 
   function solveNQueen() {
-    let results = [];
     if (!solutions) {
-      // no solutions
       const resultsAndAnimations = solvePuzzle(board);
       setSolutions(resultsAndAnimations);
-
-      results = resultsAndAnimations["results"];
+      const results = resultsAndAnimations.results;
+      const randomResult = results[getRandomIndex(results.length - 1)];
+      setBoard(randomResult);
     } else {
-      // if solution is already fetched
-      results = solutions["results"];
+      const results = solutions.results;
+      let finalBoard;
+      do {
+        finalBoard = results[getRandomIndex(results.length - 1)];
+      } while (finalBoard === board);
+      setBoard(finalBoard);
     }
-    let finalBoard;
-    while (
-      (finalBoard = results[getRandomIndex(results.length - 1)]) === board
-    ); // generate different result every time
-    setBoard(finalBoard);
   }
 
   function visualize() {
     let animations = [];
     if (!solutions) {
-      // no solutions
       const resultsAndAnimations = solvePuzzle(board);
       setSolutions(resultsAndAnimations);
-
-      animations = resultsAndAnimations["animations"];
+      animations = resultsAndAnimations.animations;
     } else {
-      // if solution is already fetched
-      animations = solutions["animations"];
+      animations = solutions.animations;
     }
-    toggleDisabled(true); // disable all btns and input fields while animation is running
-    for (let i = 0; i < animations.length; i++) {
+    
+    toggleDisabled(true);
+    animations.forEach((animation, i) => {
       setTimeout(() => {
-        setBoard(animations[i]);
-      }, i * animation_speed);
-    }
-    // enable all btns and input fields after animation is over
+        setBoard(animation.board);
+        setCurrentState(animation.state);
+        setExploredPath(animation.exploredPath || []);
+      }, i * animationSpeed);
+    });
+    
     setTimeout(() => {
       toggleDisabled(false);
-    }, animations.length * animation_speed);
+    }, animations.length * animationSpeed);
   }
 
   return (
@@ -88,7 +95,6 @@ const Chess = () => {
       <nav className="navbar navbar-dark">
         <div className="container-fluid">
           <span className="navbar-brand mb-0 h1">N-Queen</span>
-          {/* Toggle theme */}
           <span
             className="theme-icon text-warning h4 mb-0"
             onClick={switchTheme}
@@ -103,7 +109,6 @@ const Chess = () => {
       </nav>
 
       <div className="d-sm-flex p-1 justify-content-around align-items-center text-center input-bar">
-        {/* Reset board */}
         <button
           className="btn btn-dark mx-auto toggle-disabled"
           onClick={resetBoard}
@@ -111,12 +116,11 @@ const Chess = () => {
           Clear
         </button>
 
-        {/* Animation Delay input */}
         <div className="form-control m-auto" style={{ maxWidth: 250 }}>
           <label htmlFor="customRange1" className="form-label">
             <span className="text-primary">Animation Delay: </span>
             <span className="font-weight-bold text-success">
-              {`${animation_speed} ms`}
+              {`${animationSpeed} ms`}
             </span>
           </label>
           <input
@@ -126,12 +130,11 @@ const Chess = () => {
             max="1000"
             step="1"
             id="customRange1"
-            value={animation_speed}
-            onChange={(e) => setAnimationSpeed(e.target.value)}
+            value={animationSpeed}
+            onChange={(e) => setAnimationSpeed(Number(e.target.value))}
           />
         </div>
 
-        {/* Board size input */}
         <div className="form-control m-auto" style={{ maxWidth: 250 }}>
           <label htmlFor="customRange2" className="form-label">
             <span className="text-primary">Size of Board: </span>
@@ -147,7 +150,7 @@ const Chess = () => {
             step="1"
             id="customRange2"
             value={boardSize}
-            onChange={(e) => setBoardSize(e.target.value)}
+            onChange={(e) => setBoardSize(Number(e.target.value))}
           />
         </div>
 
@@ -166,13 +169,25 @@ const Chess = () => {
         </button>
       </div>
 
-      <div className="mt-sm-4">
-        <Board board={board} />
+      <div className="container-fluid mt-sm-4">
+        <div className="row">
+          <div className="col-md-6">
+            <Board board={board} />
+          </div>
+          <div className="col-md-6">
+          <StateSpaceTree 
+            currentState={currentState}
+            boardSize={boardSize}
+            exploredPath={exploredPath}
+          />
+          </div>
+        </div>
       </div>
-      <div class="possible-solutions text-center mt-sm-2">
+      
+      <div className="possible-solutions text-center mt-sm-2">
         {solutions && (
-          <span class="h4">
-            Possible solutions: {solutions["results"].length}
+          <span className="h4">
+            Possible solutions: {solutions.results.length}
           </span>
         )}
       </div>

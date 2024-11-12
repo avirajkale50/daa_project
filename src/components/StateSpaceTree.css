@@ -1,0 +1,71 @@
+.state-space-tree-container {
+    width: 100%;
+    margin-top: 20px;
+    margin-left : 100px;
+  }
+  
+  .card {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+  }
+  
+  .card-header {
+    background-color: #007bff;
+    color: white;
+    padding: 10px;
+  }
+  
+  .card-header h5 {
+    margin: 0;
+  }
+  
+  .card-body {
+    overflow-x: auto;
+    padding: 20px;
+  }
+  
+  .legend {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+  }
+  
+  .legend-item {
+    display: flex;
+    align-items: center;
+  }
+  
+  .legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin-right: 8px;
+  }
+  
+  .unexplored {
+    border: 2px solid #333;
+  }
+  
+  .explored {
+    background-color: #ffc107;
+  }
+  
+  .current {
+    background-color: #6610f2;
+  }
+  
+  .solution {
+    background-color: #28a745;
+  }
+  
+  .text-muted {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 0.9em;
+    color: #6c757d;
+  }
+  
